@@ -5,10 +5,17 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/carsondecker/pokedex-cli/pokeapi"
 )
 
 func main() {
 	initCommands()
+	mapConfig := pokeapi.Config{
+		Next: "https://pokeapi.co/api/v2/location-area/",
+		Prev: "",
+	}
+
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print("Pokedex > ")
@@ -22,7 +29,10 @@ func main() {
 			fmt.Println("Unknown command.")
 			continue
 		}
-		commands[inputWords[0]].callback()
+		err := commands[inputWords[0]].callback(&mapConfig)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+		}
 	}
 }
 
