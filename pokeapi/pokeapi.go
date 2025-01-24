@@ -36,42 +36,50 @@ func CreateCache(seconds int) {
 	cache = internal.NewCache(time.Duration(seconds) * time.Second)
 }
 
-func getMapData(url string) (MapData, error) {
+func getData[T any](url string) (T, error) {
+	var emptyStruct T
+
 	cachedData, ok := cache.Get(url)
 	if ok {
-		var decodedCache MapData
+		var decodedCache T
 		if err := json.Unmarshal(cachedData, &decodedCache); err != nil {
-			return MapData{}, errors.New("could not decode cache")
+			return emptyStruct, errors.New("could not decode cache")
 		}
-
-		mapConfig.next = decodedCache.Next
-		mapConfig.prev = decodedCache.Previous
 
 		return decodedCache, nil
 	}
 
 	res, err := http.Get(url)
 	if err != nil {
-		return MapData{}, errors.New("could not fetch data")
+		return emptyStruct, errors.New("could not fetch data")
 	}
 	defer res.Body.Close()
 
-	var resData MapData
+	var resData T
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		return MapData{}, errors.New("could not decode response for cache")
+		return emptyStruct, errors.New("could not decode response for cache")
 	}
 	if err := json.Unmarshal(body, &resData); err != nil {
-		return MapData{}, errors.New("could not decode response")
+		return emptyStruct, errors.New("could not decode response")
 	}
 
 	cache.Add(url, body)
 
-	mapConfig.next = resData.Next
-	mapConfig.prev = resData.Previous
-
 	return resData, nil
+}
+
+func getMapData(url string) (MapData, error) {
+	data, err := getData[MapData](url)
+	if err != nil {
+		return MapData{}, err
+	}
+
+	mapConfig.next = data.Next
+	mapConfig.prev = data.Previous
+
+	return data, nil
 }
 
 func GetNextMapData() (MapData, error) {

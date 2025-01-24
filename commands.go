@@ -10,7 +10,7 @@ import (
 type cliCommand struct {
 	name        string
 	description string
-	callback    func() error
+	callback    func(...string) error
 }
 
 var commands map[string]cliCommand
@@ -41,13 +41,13 @@ func initCommands() {
 	}
 }
 
-func commandExit() error {
+func commandExit(_ ...string) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
-func commandHelp() error {
+func commandHelp(_ ...string) error {
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage:")
 	for k, v := range commands {
@@ -56,7 +56,7 @@ func commandHelp() error {
 	return nil
 }
 
-func commandMap() error {
+func commandMap(_ ...string) error {
 	data, err := pokeapi.GetNextMapData()
 	if err != nil {
 		return err
@@ -67,7 +67,7 @@ func commandMap() error {
 	return nil
 }
 
-func commandMapB() error {
+func commandMapB(_ ...string) error {
 	data, err := pokeapi.GetPrevMapData()
 	if err != nil {
 		return err
