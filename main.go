@@ -26,7 +26,7 @@ func main() {
 			fmt.Println("Unknown command.")
 			continue
 		}
-		err := commands[inputWords[0]].callback()
+		err := commands[inputWords[0]].callback(inputWords[1:])
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
 		}
