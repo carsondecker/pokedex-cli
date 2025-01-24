@@ -23,7 +23,7 @@ func main() {
 		}
 		inputWords := cleanInput(scanner.Text())
 		if _, ok := commands[inputWords[0]]; !ok {
-			fmt.Println("Unknown command.")
+			fmt.Println("Error: unknown command, use 'help' command for command list")
 			continue
 		}
 		err := commands[inputWords[0]].callback(inputWords[1:])

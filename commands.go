@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"math/rand/v2"
 	"os"
 
 	"github.com/carsondecker/pokedex-cli/pokeapi"
@@ -15,6 +16,7 @@ type cliCommand struct {
 }
 
 var commands map[string]cliCommand
+var caughtPokemon map[string]pokeapi.PokemonData
 
 // Avoids initialization cycle with commands that reference the commands map
 func initCommands() {
@@ -44,7 +46,23 @@ func initCommands() {
 			description: "Finds all the pokemon in given area",
 			callback:    commandExplore,
 		},
+		"catch": {
+			name:        "catch {pokemon name}",
+			description: "Attempts to catch the given pokemon",
+			callback:    commandCatch,
+		},
+		"inspect": {
+			name:        "inspect {pokemon name}",
+			description: "Gets data about the given pokemon if you've caught it",
+			callback:    commandInspect,
+		},
+		"pokedex": {
+			name:        "pokedex",
+			description: "Shows all the pokemon in your pokedex",
+			callback:    commandPokedex,
+		},
 	}
+	caughtPokemon = make(map[string]pokeapi.PokemonData)
 }
 
 func commandExit(_ []string) error {
@@ -93,7 +111,73 @@ func commandExplore(args []string) error {
 		return err
 	}
 	for _, pokemonEncounter := range data.PokemonEncounters {
-		fmt.Printf(" - %s\n", pokemonEncounter.Pokemon.Name)
+		fmt.Printf("\t- %s\n", pokemonEncounter.Pokemon.Name)
+	}
+	return nil
+}
+
+func commandCatch(args []string) error {
+	if len(args) == 0 {
+		return errors.New("catch command requires pokemon name as argument")
+	}
+
+	if _, ok := caughtPokemon[args[0]]; ok {
+		return errors.New("you've already caught this pokemon")
+	}
+
+	data, err := pokeapi.GetNewPokemonData(args[0])
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Throwing a Pokeball at %s...\n", data.Name)
+	catchRate := 1.0 / (1.0 + float64(data.BaseExperience)/100.0)
+	if catchRate < 0.2 {
+		catchRate = 0.2
+	}
+
+	isCaught := rand.Float64() < catchRate
+	if !isCaught {
+		fmt.Printf("%s escaped!\n", data.Name)
+		return nil
+	}
+	fmt.Printf("%s was caught!\n", data.Name)
+	caughtPokemon[data.Name] = data
+	return nil
+}
+
+func commandInspect(args []string) error {
+	if len(args) == 0 {
+		return errors.New("catch command requires pokemon name as argument")
+	}
+
+	data, ok := caughtPokemon[args[0]]
+	if !ok {
+		return errors.New("that pokemon isn't in your pokedex")
+	}
+
+	fmt.Printf("Name: %s\n", data.Name)
+	fmt.Printf("Height: %d\n", data.Height)
+	fmt.Printf("Weight: %d\n", data.Weight)
+	fmt.Println("Stats:")
+	for _, pkmnStat := range data.Stats {
+		fmt.Printf("\t- %s: %d\n", pkmnStat.Stat.StatName, pkmnStat.BaseStat)
+	}
+	fmt.Println("Types:")
+	for _, pkmnType := range data.Types {
+		fmt.Printf("\t- %s\n", pkmnType.Type.TypeName)
+	}
+
+	return nil
+}
+
+func commandPokedex(args []string) error {
+	if len(caughtPokemon) == 0 {
+		return errors.New("you haven't caught any pokemon, try using the 'catch' command")
+	}
+
+	fmt.Println("Your Pokedex:")
+	for name := range caughtPokemon {
+		fmt.Printf("\t- %s\n", name)
 	}
 	return nil
 }
