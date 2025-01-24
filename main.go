@@ -13,11 +13,6 @@ func main() {
 	initCommands()
 	pokeapi.CreateCache(5)
 
-	mapConfig := pokeapi.Config{
-		Next: "https://pokeapi.co/api/v2/location-area/?offset=0&limit=20",
-		Prev: "",
-	}
-
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print("Pokedex > ")
@@ -31,7 +26,7 @@ func main() {
 			fmt.Println("Unknown command.")
 			continue
 		}
-		err := commands[inputWords[0]].callback(&mapConfig)
+		err := commands[inputWords[0]].callback()
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
 		}

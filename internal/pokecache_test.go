@@ -15,7 +15,7 @@ func TestAddGet(t *testing.T) {
 	if len(data) != len([]byte{0, 4, 8}) {
 		t.Errorf("data from cache has length %d, original data has length %d", len(data), len([]byte{0, 4, 8}))
 	}
-	for i, _ := range data {
+	for i := range data {
 		if data[i] != []byte{0, 4, 8}[i] {
 			t.Error("original value and value in cache are different")
 		}

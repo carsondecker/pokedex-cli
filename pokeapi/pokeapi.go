@@ -20,18 +20,23 @@ type MapData struct {
 	} `json:"results"`
 }
 
-type Config struct {
-	Next string
-	Prev string
+type config struct {
+	next string
+	prev string
 }
 
 var cache *internal.Cache
+
+var mapConfig config = config{
+	next: "https://pokeapi.co/api/v2/location-area/?offset=0&limit=0",
+	prev: "",
+}
 
 func CreateCache(seconds int) {
 	cache = internal.NewCache(time.Duration(seconds) * time.Second)
 }
 
-func getMapData(url string, mapConfig *Config) (MapData, error) {
+func getMapData(url string) (MapData, error) {
 	cachedData, ok := cache.Get(url)
 	if ok {
 		var decodedCache MapData
@@ -39,8 +44,8 @@ func getMapData(url string, mapConfig *Config) (MapData, error) {
 			return MapData{}, errors.New("could not decode cache")
 		}
 
-		mapConfig.Next = decodedCache.Next
-		mapConfig.Prev = decodedCache.Previous
+		mapConfig.next = decodedCache.Next
+		mapConfig.prev = decodedCache.Previous
 
 		return decodedCache, nil
 	}
@@ -63,22 +68,22 @@ func getMapData(url string, mapConfig *Config) (MapData, error) {
 
 	cache.Add(url, body)
 
-	mapConfig.Next = resData.Next
-	mapConfig.Prev = resData.Previous
+	mapConfig.next = resData.Next
+	mapConfig.prev = resData.Previous
 
 	return resData, nil
 }
 
-func GetNextMapData(mapConfig *Config) (MapData, error) {
-	if mapConfig.Next == "" {
+func GetNextMapData() (MapData, error) {
+	if mapConfig.next == "" {
 		return MapData{}, errors.New("no next pages")
 	}
-	return getMapData(mapConfig.Next, mapConfig)
+	return getMapData(mapConfig.next)
 }
 
-func GetPrevMapData(mapConfig *Config) (MapData, error) {
-	if mapConfig.Prev == "" {
+func GetPrevMapData() (MapData, error) {
+	if mapConfig.prev == "" {
 		return MapData{}, errors.New("no previous pages")
 	}
-	return getMapData(mapConfig.Prev, mapConfig)
+	return getMapData(mapConfig.prev)
 }
