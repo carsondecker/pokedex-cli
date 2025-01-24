@@ -3,7 +3,11 @@ package pokeapi
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
+	"time"
+
+	"github.com/carsondecker/pokedex-cli/internal"
 )
 
 type MapData struct {
@@ -21,7 +25,26 @@ type Config struct {
 	Prev string
 }
 
+var cache *internal.Cache
+
+func CreateCache(seconds int) {
+	cache = internal.NewCache(time.Duration(seconds) * time.Second)
+}
+
 func getMapData(url string, mapConfig *Config) (MapData, error) {
+	cachedData, ok := cache.Get(url)
+	if ok {
+		var decodedCache MapData
+		if err := json.Unmarshal(cachedData, &decodedCache); err != nil {
+			return MapData{}, errors.New("could not decode cache")
+		}
+
+		mapConfig.Next = decodedCache.Next
+		mapConfig.Prev = decodedCache.Previous
+
+		return decodedCache, nil
+	}
+
 	res, err := http.Get(url)
 	if err != nil {
 		return MapData{}, errors.New("could not fetch data")
@@ -30,13 +53,19 @@ func getMapData(url string, mapConfig *Config) (MapData, error) {
 
 	var resData MapData
 
-	decoder := json.NewDecoder(res.Body)
-	if err := decoder.Decode(&resData); err != nil {
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return MapData{}, errors.New("could not decode response for cache")
+	}
+	if err := json.Unmarshal(body, &resData); err != nil {
 		return MapData{}, errors.New("could not decode response")
 	}
 
+	cache.Add(url, body)
+
 	mapConfig.Next = resData.Next
 	mapConfig.Prev = resData.Previous
+
 	return resData, nil
 }
 

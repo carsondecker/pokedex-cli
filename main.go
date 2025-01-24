@@ -11,8 +11,10 @@ import (
 
 func main() {
 	initCommands()
+	pokeapi.CreateCache(5)
+
 	mapConfig := pokeapi.Config{
-		Next: "https://pokeapi.co/api/v2/location-area/",
+		Next: "https://pokeapi.co/api/v2/location-area/?offset=0&limit=20",
 		Prev: "",
 	}
 
